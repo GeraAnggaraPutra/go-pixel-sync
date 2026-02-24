@@ -1,8 +1,4 @@
-/**
- * PIXEL STUDIO PRO - Core Logic (Corrected Version)
- */
-
-// 1. Inisialisasi User & State
+// Initialization & State
 let myName = prompt("Your name:", "Player") || "Guest";
 document.getElementById("myNameDisplay").innerText = myName;
 
@@ -19,14 +15,14 @@ let remoteCursors = {};
 let hoveredPixel = null;
 let unreadCount = 0;
 
-// State Zoom & Pan
+// Pan & Zoom State
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
 let isPanning = false;
 let startX, startY;
 
-// 2. Elemen DOM
+// DOM Elements & WebSocket
 const ws = new WebSocket(`ws://${window.location.host}/ws`);
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -34,18 +30,18 @@ const colorPicker = document.getElementById("colorPicker");
 const userCountEl = document.getElementById("userCount");
 const wrapper = document.getElementById("wrapper");
 
-// 3. Setup Kanvas Awal
 canvas.width = gridSize * pixelSize;
 canvas.height = gridSize * pixelSize;
 
-/**
- * WEBSOCKET HANDLER
- */
+// WebSocket Handler
 ws.onmessage = (e) => {
     const data = JSON.parse(e.data);
     
     if (data.type === "init") {
         myID = data.id;
+        if (data.size) {
+            applyResize(data.size, false); // Sync canvas size from server
+        }
     } else if (data.type === "presence") {
         userCountEl.innerText = data.online_users;
     } else if (data.type === "cursor" && data.id !== myID) {
@@ -69,21 +65,18 @@ ws.onmessage = (e) => {
     }
 };
 
-/**
- * CORE RENDERING
- */
+// Canvas Rendering
 function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (showGrid) {
-        // Checkerboard background
         ctx.fillStyle = "#f0f0f0";
         for (let i = 0; i < gridSize; i++) {
             for (let j = 0; j < gridSize; j++) {
                 if ((i + j) % 2 === 1) ctx.fillRect(i * pixelSize, j * pixelSize, pixelSize, pixelSize);
             }
         }
-        // Grid lines
+        
         ctx.strokeStyle = "rgba(0, 0, 0, 0.08)";
         ctx.lineWidth = 0.5;
         for (let i = 0; i <= gridSize; i++) {
@@ -95,14 +88,12 @@ function drawGrid() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Render Pixels
     for (let key in pixels) {
         const [x, y] = key.split(",");
         ctx.fillStyle = pixels[key];
         ctx.fillRect(parseInt(x) * pixelSize, parseInt(y) * pixelSize, pixelSize, pixelSize);
     }
 
-    // Render Hover Preview (Kotak bayangan saat mouse bergerak)
     if (hoveredPixel && !isDrawing && !isPanning) {
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = currentMode === 'eraser' ? "#ffffff" : colorPicker.value;
@@ -113,25 +104,20 @@ function drawGrid() {
     }
 }
 
-/**
- * COORDINATE & TRANSFORM SYSTEM
- */
+// Helpers
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
-    // Rumus menghitung posisi pixel yang tepat meski sedang di-zoom/pan
     const x = Math.floor((e.clientX - rect.left) / (pixelSize * scale));
     const y = Math.floor((e.clientY - rect.top) / (pixelSize * scale));
     return { x, y };
 }
 
 function updateCanvasTransform() {
-    // Menggunakan translate3d untuk akselerasi hardware
     canvas.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+    renderAllCursors();
 }
 
-/**
- * TOOLS & MODES
- */
+// UI Controls
 function setMode(mode) {
     currentMode = mode;
     document.getElementById("btnPencil").classList.toggle("active", mode === 'pencil');
@@ -149,10 +135,13 @@ function applyResize(size, broadcast) {
     canvas.width = gridSize * pixelSize;
     canvas.height = gridSize * pixelSize;
     document.getElementById("inputGridSize").value = size;
+    
     if (broadcast && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "resize", size: size }));
     }
     drawGrid();
+
+    setTimeout(renderAllCursors, 50);
 }
 
 function resizeCanvas() {
@@ -162,9 +151,7 @@ function resizeCanvas() {
     }
 }
 
-/**
- * DRAWING LOGIC
- */
+// Drawing Logic
 function paint(e) {
     const pos = getMousePos(e);
     if (pos.x < 0 || pos.x >= gridSize || pos.y < 0 || pos.y >= gridSize) return;
@@ -190,11 +177,9 @@ function sendUpdate(data) {
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
 }
 
-/**
- * MOUSE & INTERACTION EVENTS
- */
+// Mouse Events
 canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 0) { // Klik Kiri: Menggambar
+    if (e.button === 0) {
         e.preventDefault();
         isDrawing = true;
         saveState();
@@ -203,7 +188,7 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 wrapper.addEventListener("mousedown", (e) => {
-    if (e.button === 1 || e.button === 2) { // Klik Tengah/Kanan: Panning (Geser)
+    if (e.button === 1 || e.button === 2) {
         isPanning = true;
         startX = e.clientX - translateX;
         startY = e.clientY - translateY;
@@ -213,7 +198,6 @@ wrapper.addEventListener("mousedown", (e) => {
 });
 
 window.addEventListener("mousemove", (e) => {
-    // 1. Logika Geser Kanvas
     if (isPanning) {
         translateX = e.clientX - startX;
         translateY = e.clientY - startY;
@@ -221,9 +205,7 @@ window.addEventListener("mousemove", (e) => {
         return;
     }
 
-    // 2. Logika Update Hover & Kursor
     const pos = getMousePos(e);
-    const rect = canvas.getBoundingClientRect();
 
     if (pos.x >= 0 && pos.x < gridSize && pos.y >= 0 && pos.y < gridSize) {
         hoveredPixel = pos;
@@ -231,29 +213,24 @@ window.addEventListener("mousemove", (e) => {
         hoveredPixel = null; 
     }
 
-    // Kirim posisi kursor ke pemain lain
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ 
-            type: "cursor", 
-            user: myName, 
-            x: e.clientX - rect.left, 
-            y: e.clientY - rect.top 
-        }));
-    }
-
-    // 3. Logika Menggambar
     if (isDrawing) {
         paint(e);
     } else {
-        drawGrid(); // Render ulang untuk hover preview
+        drawGrid(); 
+    }
+
+    if (ws.readyState === WebSocket.OPEN && hoveredPixel) {
+        ws.send(JSON.stringify({ 
+            type: "cursor", 
+            user: myName, 
+            x: (hoveredPixel.x * pixelSize) + (pixelSize / 2), 
+            y: (hoveredPixel.y * pixelSize) + (pixelSize / 2) 
+        }));
     }
 });
 
 window.addEventListener("mouseup", () => {
-    if (isDrawing) {
-        isDrawing = false;
-        syncToDB();
-    }
+    if (isDrawing) isDrawing = false;
     isPanning = false;
     wrapper.style.cursor = "grab";
 });
@@ -268,9 +245,7 @@ wrapper.addEventListener("wheel", (e) => {
 
 wrapper.addEventListener("contextmenu", e => e.preventDefault());
 
-/**
- * CHAT & NOTIFICATION
- */
+// Chat System
 function sendChatMessage() {
     const input = document.getElementById("chatInput");
     const text = input.value.trim();
@@ -288,6 +263,7 @@ function toggleChatPopup() {
     const chatPopup = document.getElementById("chatPopup");
     const chatBadge = document.getElementById("chatBadge");
     chatPopup.classList.toggle("active");
+    
     if (chatPopup.classList.contains("active")) {
         unreadCount = 0;
         chatBadge.style.display = "none";
@@ -312,13 +288,11 @@ function displayChatMessage(user, text) {
         unreadCount++;
         chatBadge.innerText = unreadCount;
         chatBadge.style.display = "flex"; 
-        document.title = `(${unreadCount}) Pesan Baru | Pixel Studio Pro`;
+        document.title = `(${unreadCount}) New Message | Pixel Studio Pro`;
     }
 }
 
-/**
- * REMOTE CURSORS
- */
+// Remote Cursors
 function updateRemoteCursor(data) {
     let cursor = remoteCursors[data.id];
     if (!cursor) {
@@ -328,8 +302,29 @@ function updateRemoteCursor(data) {
         wrapper.appendChild(cursor);
         remoteCursors[data.id] = cursor;
     }
-    cursor.style.left = (data.x - 7) + "px";
-    cursor.style.top = (data.y - 7) + "px";
+    
+    cursor.dataset.x = data.x;
+    cursor.dataset.y = data.y;
+
+    renderCursor(cursor);
+}
+
+function renderCursor(cursor) {
+    const canvasRect = canvas.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    const dataX = parseFloat(cursor.dataset.x);
+    const dataY = parseFloat(cursor.dataset.y);
+
+    const relativeLeft = (canvasRect.left - wrapperRect.left) + (dataX * scale);
+    const relativeTop = (canvasRect.top - wrapperRect.top) + (dataY * scale);
+
+    cursor.style.left = (relativeLeft - 7) + "px";
+    cursor.style.top = (relativeTop - 7) + "px";
+}
+
+function renderAllCursors() {
+    Object.values(remoteCursors).forEach(renderCursor);
 }
 
 function removeRemoteCursor(id) {
@@ -339,9 +334,7 @@ function removeRemoteCursor(id) {
     }
 }
 
-/**
- * HISTORY & PERSISTENCE
- */
+// History Management
 function saveState() {
     undoStack.push(JSON.stringify(pixels));
     if (undoStack.length > 50) undoStack.shift();
@@ -396,12 +389,12 @@ function execDeleteAll() {
 }
 
 function execExport() {
-    window.open("/api/export", "_blank");
+    window.open(`/api/export?size=${gridSize}`, "_blank");
 }
 
-/**
- * STARTUP
- */
+window.addEventListener("resize", renderAllCursors);
+
+// Load Initial Data
 fetch("/api/load")
     .then(res => res.json())
     .then(data => {
@@ -411,4 +404,5 @@ fetch("/api/load")
     })
     .catch(err => console.error("Error loading data:", err));
 
+// Initial Setup
 setMode('pencil');

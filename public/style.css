@@ -1,7 +1,7 @@
 :root {
     --primary-color: #007aff;
     --danger-color: #ff3b30;
-    --bg-color: #f5f5f7;
+    --bg-color: #ffffff;
     --panel-bg: #ffffff;
     --text-color: #1d1d1f;
     --cursor-green: #00ff00;
@@ -16,6 +16,19 @@ body {
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    overflow-y: auto; 
+}
+
+.header-container {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 20px;
+    pointer-events: none;
 }
 
 .status-bar {
@@ -28,20 +41,22 @@ body {
     font-weight: 500;
     margin-bottom: 24px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    pointer-events: auto;
 }
 
-/* Toolbar Container */
 .controls {
-    background: var(--panel-bg);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
     padding: 12px 20px;
     border-radius: 16px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.08);
     display: flex;
     gap: 12px;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 0;
     flex-wrap: wrap;
     border: 1px solid rgba(0,0,0,0.05);
+    pointer-events: auto; 
 }
 
 /* Buttons Styling */
@@ -96,15 +111,18 @@ input[type="color"]::-webkit-color-swatch {
 .canvas-wrapper {
     position: relative;
     width: 95%;
-    height: 70vh; 
-    overflow: auto; 
-    background: #d1d1d1;
+    height: auto; 
+    min-height: 70vh; 
+    overflow: visible; 
+    background: transparent;
     border-radius: 12px;
     cursor: grab;
-    display: grid;
-    place-items: center;
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-start; 
     padding: 50px;
     box-sizing: border-box;
+    margin-bottom: 100px; 
 }
 
 #canvas {
@@ -114,10 +132,6 @@ input[type="color"]::-webkit-color-swatch {
     transform-origin: center;
     transition: transform 0.1s ease-out;
     touch-action: none;
-}
-
-.canvas-wrapper:active {
-    cursor: grabbing;
 }
 
 canvas {
@@ -197,7 +211,8 @@ input:checked + .slider:before { transform: translateX(18px); }
     backdrop-filter: blur(4px);
 }
 
-#chatToggleBtn {
+/* Chat Main Button - Fixed Position */
+.chat-main-btn {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -206,7 +221,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     background: var(--primary-color);
     color: white;
     box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
-    z-index: 999;
+    z-index: 9999;
     font-weight: 600;
     cursor: pointer;
     border: none;
@@ -226,7 +241,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     height: 18px;
     padding: 2px;
     border-radius: 50%;
-    display: none;     
+    display: flex;     
     align-items: center;
     justify-content: center;
     font-weight: bold;
@@ -234,6 +249,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+/* Chat Popup Container - Fixed Position */
 .chat-popup {
     position: fixed;
     bottom: 80px;
@@ -246,7 +262,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     display: none;
     flex-direction: column;
     overflow: hidden;
-    z-index: 1000;
+    z-index: 10000;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -268,6 +284,19 @@ input:checked + .slider:before { transform: translateX(18px); }
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
+}
+
+.chat-close-btn {
+    background: none;
+    color: white;
+    border: none;
+    padding: 0;
+    font-size: 16px;
+    box-shadow: none;
+}
+.chat-close-btn:hover {
+    background: none;
+    transform: scale(1.1);
 }
 
 .chat-messages {

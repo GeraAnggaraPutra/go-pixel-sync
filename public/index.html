@@ -7,54 +7,55 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="status-bar">
-        ● <span id="userCount">0</span> users online &nbsp;|&nbsp; Logged in as: <span id="myNameDisplay">...</span>
-    </div>
-
-    <div class="controls">
-        <input type="color" id="colorPicker" value="#1d1d1f">
-        
-        <div style="display:flex; gap:4px;">
-            <button id="btnPencil" class="active" onclick="setMode('pencil')">✎ Pencil</button>
-            <button id="btnEraser" onclick="setMode('eraser')">⌫ Eraser</button>
+    <div class="header-container">
+        <div class="status-bar">
+            ● <span id="userCount">0</span> users online &nbsp;|&nbsp; Logged in as: <span id="myNameDisplay">...</span>
         </div>
 
-        <div style="display:flex; gap:8px; border-left: 1px solid #eee; padding-left:12px; align-items: center;">
-            <span style="font-size: 13px; font-weight: 600;">Size:</span>
-            <input type="number" id="inputGridSize" value="20" min="5" max="100" style="width: 50px; padding: 5px; border-radius: 6px; border: 1px solid #ddd;">
-            <button onclick="resizeCanvas()">Apply</button>
-        </div>
-
-        <div style="display:flex; gap:4px; border-left: 1px solid #eee; padding-left:12px;">
-            <button onclick="execUndo()">Undo</button>
-            <button onclick="execRedo()">Redo</button>
-        </div>
-
-        <label class="grid-toggle-container">
-            <span>Show Grid</span>
-            <div class="switch">
-                <input type="checkbox" id="gridToggle" checked onclick="toggleGrid()">
-                <span class="slider"></span>
+        <div class="controls">
+            <input type="color" id="colorPicker" value="#1d1d1f">
+            
+            <div style="display:flex; gap:4px;">
+                <button id="btnPencil" class="active" onclick="setMode('pencil')">✎ Pencil</button>
+                <button id="btnEraser" onclick="setMode('eraser')">⌫ Eraser</button>
             </div>
-        </label>
 
-        <button class="danger" onclick="execDeleteAll()">Clear</button>
-        <button id="btnExport" onclick="execExport()" style="background: var(--primary-color); color: white;">Export PNG</button>
+            <div style="display:flex; gap:8px; border-left: 1px solid #eee; padding-left:12px; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600;">Size:</span>
+                <input type="number" id="inputGridSize" value="20" min="5" max="100" style="width: 50px; padding: 5px; border-radius: 6px; border: 1px solid #ddd;">
+                <button onclick="resizeCanvas()">Apply</button>
+            </div>
+
+            <div style="display:flex; gap:4px; border-left: 1px solid #eee; padding-left:12px;">
+                <button onclick="execUndo()">Undo</button>
+                <button onclick="execRedo()">Redo</button>
+            </div>
+
+            <label class="grid-toggle-container">
+                <span>Show Grid</span>
+                <div class="switch">
+                    <input type="checkbox" id="gridToggle" checked onclick="toggleGrid()">
+                    <span class="slider"></span>
+                </div>
+            </label>
+
+            <button class="danger" onclick="execDeleteAll()">Clear</button>
+            <button id="btnExport" onclick="execExport()" style="background: var(--primary-color); color: white;">Export PNG</button>
+        </div>
     </div>
-
     <div class="canvas-wrapper" id="wrapper">
         <canvas id="canvas"></canvas>
     </div>
 
-    <button id="chatToggleBtn" onclick="toggleChatPopup()">💬 Chat</button>
+    <button id="chatToggleBtn" class="chat-main-btn" onclick="toggleChatPopup()">
+        <span id="chatBadge" style="display: none;">0</span>
+        💬 Chat
+    </button>
 
     <div class="chat-popup" id="chatPopup">
         <div class="chat-header">
             <span>Live Chat</span>
-            <button id="chatToggleBtn" onclick="toggleChatPopup()">
-                <span id="chatBadge">0</span>
-                💬 Chat
-            </button>
+            <button class="chat-close-btn" onclick="toggleChatPopup()">✕</button>
         </div>
         <div id="chatMessages" class="chat-messages">
             </div>
